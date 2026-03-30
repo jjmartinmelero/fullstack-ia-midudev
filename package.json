@@ -1,0 +1,25 @@
+{
+  "name": "fullstack-ia-midudev",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jjmartinmelero/fullstack-ia-midudev.git"
+  },
+  "keywords": [],
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/jjmartinmelero/fullstack-ia-midudev/issues"
+  },
+  "homepage": "https://github.com/jjmartinmelero/fullstack-ia-midudev#readme"
+}
