@@ -4,8 +4,20 @@ import { Router } from "express";
 import { OpenAI } from "openai";
 import { JobModel } from "../models/job.js";
 import { CONFIG } from "../config.js";
+import rateLimit from "express-rate-limit";
+
+const aiRateLimit = rateLimit({
+  windowMs: 60 * 1000, // -> 1 minuto
+  max: 5, // -> 5 peticiones por minuto
+  message:{ error: "Demasiadas peticiones, intenta de nuevo en 1 minuto"},
+  legacyHeaders: false,
+  standardHeaders: 'draft-8', // -> headers estandar
+
+});
 
 export const aiRouter = Router();
+
+aiRouter.use(aiRateLimit);
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
