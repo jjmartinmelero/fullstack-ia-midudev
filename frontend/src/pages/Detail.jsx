@@ -6,6 +6,9 @@ import styles from './Detail.module.css'
 import { useAuthStore } from "../store/authStore"
 import { useFavoritesStore } from "../store/favoritesStore"
 
+
+const API_URL = import.meta.env.VITE_BACKEND_HOST ?? 'https://jscamp-api.vercel.app/api'
+
 function JobSection ({ title, content }) {
   const html = snarkdown(content)
 
@@ -84,6 +87,58 @@ function DetailFavoriteButton ({ jobId }) {
   )
 }
 
+
+function AISummary({jobId}) {
+  const [summary, setSummary] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const generateSummary = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+
+      const response = await fetch(`${API_URL}/ai/summary/${jobId}`);
+
+      if(!response.ok) {
+        throw new Error('Error fetching summary')
+      }
+
+      const data = await response.json();
+      setSummary(data.summary);
+
+    } catch {
+      setError('Error generating summary');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if(summary) {
+    return (
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Resumen con IA</h2>
+        <div className={`${styles.sectionContent}`}>
+          <p>{summary}</p>
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <button 
+      onClick={generateSummary} 
+      className={styles.applyButton} 
+      disabled={loading}>
+      {loading ? 'Generando...' : 'Generar resumen con IA'}
+    </button>
+  )
+
+
+}
+
+
 export default function JobDetail () {
   const { jobId } = useParams()
   const navigate = useNavigate()
@@ -93,7 +148,8 @@ export default function JobDetail () {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    fetch(`https://jscamp-api.vercel.app/api/jobs/${jobId}`)
+    // fetch(`https://jscamp-api.vercel.app/api/jobs/${jobId}`)
+    fetch(`${API_URL}/jobs/${jobId}`)
       .then(response => {
         if (!response.ok) {
           navigate('/not-found')
@@ -142,6 +198,7 @@ export default function JobDetail () {
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1rem' }}>
       <DetailPageBreadCrumb job={job} />
       <DetailPageHeader job={job} />
+      <AISummary jobId={job.id} />
 
       <JobSection title="Descripción del puesto" content={job.content.description} />
       <JobSection title="Responsabilidades" content={job.content.responsibilities} />
