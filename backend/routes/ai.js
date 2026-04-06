@@ -3,6 +3,7 @@ process.loadEnvFile();
 import { Router } from "express";
 import { OpenAI } from "openai";
 import { JobModel } from "../models/job.js";
+import { CONFIG } from "../config.js";
 
 export const aiRouter = Router();
 
@@ -43,6 +44,7 @@ aiRouter.get("/summary/:id", async (req, res) => {
           content: prompt,
         },
       ],
+      model: CONFIG.MODEL_AI
     });
 
     console.log("OpenAI response: ", completion);
