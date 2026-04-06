@@ -96,6 +96,7 @@ function AISummary({jobId}) {
   const generateSummary = async () => {
     setLoading(true);
     setError(null);
+    setSummary('');
 
     try {
 
@@ -105,8 +106,18 @@ function AISummary({jobId}) {
         throw new Error('Error fetching summary')
       }
 
-      const data = await response.json();
-      setSummary(data.summary);
+      // read stream data
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      
+      while(true) {
+        const { done, value } = await reader.read();
+        if(done) break;
+        
+        // every chunk is a text fragment
+        const chunk = decoder.decode(value, { stream: true });
+        setSummary(prev => prev + chunk);
+      }
 
     } catch {
       setError('Error generating summary');

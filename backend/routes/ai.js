@@ -45,7 +45,11 @@ aiRouter.get("/summary/:id", async (req, res) => {
   ].join("\n");
 
   try {
-    const completion = await openai.chat.completions.create({
+
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Transfer-Encoding', 'chunked');
+
+    const stream = await openai.chat.completions.create({
       messages: [
         {
           role: "system",
@@ -56,19 +60,26 @@ aiRouter.get("/summary/:id", async (req, res) => {
           content: prompt,
         },
       ],
-      model: CONFIG.MODEL_AI
+      model: CONFIG.MODEL_AI,
+      stream: true
     });
 
-    console.log("OpenAI response: ", completion);
+    for await (const part of stream){
+      const content = part.choices[0].delta.content;
 
-    const summary = completion.choices?.[0]?.message?.content.trim();
-
-    if (!summary) {
-      return res.status(502).json({ error: "No summary generated" });
+      if(content){
+        res.write(content);
+      }
     }
 
-    return res.json({ summary });
+    return res.end();
   } catch (error) {
-    return res.status(500).json({ error: "Error generating summary" });
+    
+    if(!res.headersSent){
+      res.setHeader('Content-Type', 'application/json')
+      return res.status(500).json({ error: "Error generating summary" });
+    }
+    
+    return res.end();
   }
 });
