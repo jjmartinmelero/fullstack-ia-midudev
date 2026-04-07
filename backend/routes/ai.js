@@ -1,7 +1,8 @@
 process.loadEnvFile();
 
 import { Router } from "express";
-import { OpenAI } from "openai";
+// import { OpenAI } from "openai";
+import { streamText } from "ai";
 import { JobModel } from "../models/job.js";
 import { CONFIG } from "../config.js";
 import rateLimit from "express-rate-limit";
@@ -9,19 +10,18 @@ import rateLimit from "express-rate-limit";
 const aiRateLimit = rateLimit({
   windowMs: 60 * 1000, // -> 1 minuto
   max: 5, // -> 5 peticiones por minuto
-  message:{ error: "Demasiadas peticiones, intenta de nuevo en 1 minuto"},
+  message: { error: "Demasiadas peticiones, intenta de nuevo en 1 minuto" },
   legacyHeaders: false,
-  standardHeaders: 'draft-8', // -> headers estandar
-
+  standardHeaders: "draft-8", // -> headers estandar
 });
 
 export const aiRouter = Router();
 
 aiRouter.use(aiRateLimit);
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// const openai = new OpenAI({
+//   apiKey: process.env.OPENAI_API_KEY,
+// });
 
 aiRouter.get("/summary/:id", async (req, res) => {
   const { id } = req.params;
@@ -35,6 +35,7 @@ aiRouter.get("/summary/:id", async (req, res) => {
   observacion o comentario. Solo responde con el resumen de la oferta de trabajo. Responde siempre con el markdown directamente`;
 
   const prompt = [
+    systemPrompt,
     `Resume en 4-6 frases la siguiente oferta de trabajo:`,
     `Incluye: Rol, empresa, ubicacion y requisitos clave`,
     `usa un tono claro y directo en espanol`,
@@ -45,41 +46,46 @@ aiRouter.get("/summary/:id", async (req, res) => {
   ].join("\n");
 
   try {
+    // res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    // res.setHeader("Transfer-Encoding", "chunked");
 
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Transfer-Encoding', 'chunked');
+    // const stream = await openai.chat.completions.create({
+    //   messages: [
+    //     {
+    //       role: "system",
+    //       content: systemPrompt,
+    //     },
+    //     {
+    //       role: "user",
+    //       content: prompt,
+    //     },
+    //   ],
+    //   model: CONFIG.MODEL_AI,
+    //   stream: true,
+    // });
 
-    const stream = await openai.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+    const result = streamText({
+      prompt,
       model: CONFIG.MODEL_AI,
-      stream: true
     });
 
-    for await (const part of stream){
-      const content = part.choices[0].delta.content;
+    return result.pipeTextStreamToResponse(res);
 
-      if(content){
-        res.write(content);
-      }
-    }
+    // for await (const part of stream) {
+    //   const content = part.choices[0].delta.content;
+
+    //   if (content) {
+    //     res.write(content);
+    //   }
+    // }
 
     return res.end();
   } catch (error) {
-    
-    if(!res.headersSent){
-      res.setHeader('Content-Type', 'application/json')
+    if (!res.headersSent) {
+      res.setHeader("Content-Type", "application/json");
       return res.status(500).json({ error: "Error generating summary" });
     }
-    
+
     return res.end();
   }
 });
