@@ -6,6 +6,7 @@ import styles from "./Detail.module.css";
 import { useAuthStore } from "../store/authStore";
 import { useFavoritesStore } from "../store/favoritesStore";
 import { useAISummary } from "../hooks/useAISummary";
+import { Streamdown } from "streamdown";
 const API_URL =
   import.meta.env.VITE_BACKEND_HOST ?? "https://jscamp-api.vercel.app/api";
 
@@ -88,7 +89,7 @@ function AISummary({ jobId }) {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Resumen con IA</h2>
         <div className={`${styles.sectionContent}`}>
-          <p>{summary}</p>
+          <Streamdown isAnimating={loading}>{summary}</Streamdown>
         </div>
       </section>
     );
